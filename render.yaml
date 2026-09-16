@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: new-macro-dashboard
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: EODHD_API_TOKEN
+        sync: false
