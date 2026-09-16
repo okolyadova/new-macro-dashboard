@@ -1,0 +1,655 @@
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Financial Market Dashboard</title>
+<style>
+:root{color-scheme:dark;--bg:#08121f;--line:#26394d;--text:#eef4f9;--muted:#94a9bb;--red:#ff7280;--cyan:#72d7dc;--green:#83d6aa}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 80% -20%,#173551 0,transparent 42%),var(--bg);color:var(--text);font:14px/1.4 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input{font:inherit}
+button{cursor:pointer}
+.wrap{max-width:1390px;margin:auto;padding:34px 28px 56px}
+.top{display:flex;justify-content:space-between;gap:20px;align-items:start;border-bottom:1px solid var(--line);padding-bottom:22px}
+.eyebrow,.num{color:var(--cyan);font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase}
+.top h1{font-size:clamp(24px,3vw,34px);line-height:1.1;letter-spacing:-.035em;margin:8px 0 6px}
+.subtitle{color:var(--muted);margin:0}
+.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.btn{border:1px solid var(--line);background:#16283b;color:var(--text);border-radius:9px;padding:9px 12px}
+.btn:hover{border-color:var(--cyan)}
+.datebar{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:20px 0 28px;padding:12px 15px;border:1px solid var(--line);border-radius:11px;background:#0f1d2d}
+.datebar strong{font-size:13px}
+.status{color:var(--muted);font-size:12px;text-align:right}
+.module{margin-top:28px}
+.modulehead{display:flex;align-items:baseline;gap:13px;margin-bottom:12px}
+.module h2{font-size:18px;letter-spacing:-.02em;margin:0}
+.module .context{color:var(--muted);font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}
+.card{min-height:151px;background:linear-gradient(150deg,#142438,#101e2e);border:1px solid var(--line);border-radius:12px;padding:17px;display:flex;flex-direction:column;min-width:0}
+.label{font-size:11px;letter-spacing:.12em;font-weight:750;color:#a9c1d0;text-transform:uppercase}
+.value{margin:17px 0 5px;font-size:clamp(20px,2.1vw,29px);font-weight:760;letter-spacing:-.04em;white-space:nowrap;color:var(--text)}
+.unit{font-size:.53em;letter-spacing:0;font-weight:650;color:inherit}
+.currency{font-size:1em;font-weight:inherit;color:inherit}
+.value.stale{color:var(--text)}
+.value.signal-high{color:var(--green)}
+.value.signal-low{color:var(--red)}
+.cardbottom{margin-top:auto;min-height:29px}
+.meta{font-size:11px;color:var(--muted);overflow-wrap:anywhere}
+.asof{font-size:11px;font-weight:720;margin-top:2px;color:var(--muted)}
+.changes{display:flex;flex-wrap:wrap;gap:6px;margin:5px 0 8px}
+.change{border:1px solid #345063;background:#132d3b;border-radius:5px;padding:3px 6px;font-size:11px;white-space:nowrap}
+.change .tag{color:inherit;margin-right:4px}
+.change.negative{color:var(--red)}
+.change.positive{color:var(--green)}
+.error{font-size:11px;color:#efb3b8;margin:3px 0 7px}
+.foot{border-top:1px solid var(--line);margin-top:32px;padding-top:14px;color:var(--muted);font-size:11px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.foot a,.help a{color:var(--cyan)}
+dialog{background:#122236;color:var(--text);border:1px solid #3d566a;border-radius:13px;max-width:520px;width:calc(100% - 28px);padding:22px;box-shadow:0 25px 80px #0009}
+dialog::backdrop{background:#000a}
+dialog h3{margin:0 0 8px;font-size:20px}
+dialog p{color:var(--muted);font-size:13px}
+.field{display:grid;gap:5px;margin:15px 0}
+.field input{width:100%;border:1px solid #456075;background:#081725;color:var(--text);padding:10px;border-radius:7px}
+.dialogactions{display:flex;justify-content:flex-end;gap:9px}
+.help{font-size:11px;color:var(--muted)}
+@media(max-width:1000px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:590px){
+  .wrap{padding:22px 15px 40px}
+  .top{display:block}
+  .actions{justify-content:flex-start;margin-top:17px}
+  .grid{grid-template-columns:1fr}
+  .card{min-height:135px}
+  .datebar{align-items:start;flex-direction:column}
+  .status{text-align:left}
+  .modulehead{flex-wrap:wrap}
+  .value{font-size:27px}
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Market intelligence / daily brief</div>
+      <h1>Financial Market Dashboard</h1>
+      <p class="subtitle">Macro indicators and listed equity snapshots</p>
+    </div>
+    <div class="actions">
+      <button class="btn" id="settingsBtn">Data access</button>
+      <button class="btn" id="refreshBtn">Refresh data</button>
+    </div>
+  </header>
+
+  <div class="datebar">
+    <strong id="dashboardDate">Dashboard as of —</strong>
+    <span class="status" id="status" role="status">Preparing data…</span>
+  </div>
+
+  <section class="module" aria-labelledby="macroTitle">
+    <div class="modulehead">
+      <span class="num">Module 01</span>
+      <h2 id="macroTitle">Macro</h2>
+      <span class="context">Official reference rates</span>
+    </div>
+    <div class="grid" id="macroGrid"></div>
+  </section>
+
+  <section class="module" aria-labelledby="reniTitle">
+    <div class="modulehead">
+      <span class="num">Module 02</span>
+      <h2 id="reniTitle">Renaissance Insurance</h2>
+      <span class="context">RENI · MOEX · RUB</span>
+    </div>
+    <div class="grid" id="reniGrid"></div>
+  </section>
+
+  <section class="module" aria-labelledby="curaTitle">
+    <div class="modulehead">
+      <span class="num">Module 03</span>
+      <h2 id="curaTitle">Curaleaf Holdings</h2>
+      <span class="context">CURA.TO · TSX · CAD</span>
+    </div>
+    <div class="grid" id="curaGrid"></div>
+  </section>
+
+  <footer class="foot">
+    <span>Reference rates and exchange close prices may publish at different times. Earlier observations show an “As of” date.</span>
+    <span>
+      <a href="https://www.cbr.ru/development/sxml/" target="_blank" rel="noopener">Bank of Russia</a> ·
+      <a href="https://www.moex.com/files/4be999zbzp80bx2bgmwayrtyx0" target="_blank" rel="noopener">MOEX ISS</a> ·
+      <a href="https://www.bankofcanada.ca/valet/docs/" target="_blank" rel="noopener">Bank of Canada</a> ·
+      <a href="https://eodhd.com/financial-apis/stock-etfs-fundamental-data-feeds" target="_blank" rel="noopener">EODHD</a>
+    </span>
+  </footer>
+</main>
+
+<dialog id="settings">
+  <h3>Curaleaf data access</h3>
+  <p>Enter an EODHD API token for TSX close prices and reported shares outstanding. Your token stays in this browser tab and is sent directly to EODHD. Fundamentals access may require a paid plan.</p>
+  <label class="field">EODHD API token
+    <input id="token" type="password" autocomplete="off" placeholder="Paste token">
+  </label>
+  <div class="dialogactions">
+    <button class="btn" id="cancelSettings">Cancel</button>
+    <button class="btn" id="saveSettings">Load data</button>
+  </div>
+  <p class="help">This dashboard uses the Bank of Canada for CAD/USD. No Bloomberg branding is applied to another provider.</p>
+</dialog>
+
+<script>
+(() => {
+  'use strict';
+
+  const RENI_SHARES = 556952780;
+  const dateParts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Nicosia',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).formatToParts(new Date()).map(x => [x.type, x.value])
+  );
+  const TODAY = `${dateParts.year}-${dateParts.month}-${dateParts.day}`;
+  const $ = id => document.getElementById(id);
+  let token = '';
+
+  const iso = d => {
+    const x = new Date(d + 'T12:00:00Z');
+    return Number.isNaN(+x) ? null : x.toISOString().slice(0, 10);
+  };
+
+  const shift = (d, n) => {
+    const x = new Date(d + 'T12:00:00Z');
+    x.setUTCDate(x.getUTCDate() + n);
+    return x.toISOString().slice(0, 10);
+  };
+
+  const monthBack = d => {
+    const x = new Date(d + 'T12:00:00Z');
+    const day = x.getUTCDate();
+    x.setUTCDate(1);
+    x.setUTCMonth(x.getUTCMonth() - 1);
+    const m = x.getUTCMonth();
+    x.setUTCDate(Math.min(
+      day,
+      new Date(Date.UTC(x.getUTCFullYear(), m + 1, 0)).getUTCDate()
+    ));
+    return x.toISOString().slice(0, 10);
+  };
+
+  const yearBack = d => {
+    const x = new Date(d + 'T12:00:00Z');
+    x.setUTCFullYear(x.getUTCFullYear() - 1);
+    return x.toISOString().slice(0, 10);
+  };
+
+  const nice = d => d
+    ? new Intl.DateTimeFormat('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        timeZone: 'UTC'
+      }).format(new Date(d + 'T12:00:00Z'))
+    : '—';
+
+  const fixed = (v, n) => Number(v).toLocaleString('en-US', {
+    minimumFractionDigits: n,
+    maximumFractionDigits: n
+  });
+  const integer = v => Math.round(v).toLocaleString('en-US');
+  const valid = v => Number.isFinite(Number(v)) && Number(v) > 0;
+
+  const latest = (rows, at) =>
+    rows
+      .filter(x => x.date <= at && valid(x.value))
+      .sort((a, b) => b.date.localeCompare(a.date))[0] || null;
+
+  const pct = (a, b) =>
+    a && b && valid(b.value) ? (a.value / b.value - 1) * 100 : null;
+
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  })[c]);
+
+  function card(label, obs, format, source, opts = {}) {
+    let out = `<article class="card"><div class="label">${esc(label)}</div>`;
+
+    if (obs) {
+      const stale = obs.date !== TODAY;
+      const signal = opts.signal ? opts.signal(obs.value) : '';
+
+      out += `<div class="value${stale ? ' stale' : ''}${signal ? ' ' + signal : ''}">${format(obs.value)}</div>`;
+
+      if (opts.changes?.length) {
+        out += '<div class="changes">' +
+          opts.changes.map(c =>
+            `<span class="change ${c.value == null ? '' : c.value < 0 ? 'negative' : 'positive'}">` +
+            `<span class="tag">${esc(c.name)}</span>` +
+            (c.value == null ? '—' : `${c.value > 0 ? '+' : ''}${fixed(c.value, 1)}%`) +
+            `</span>`
+          ).join('') +
+          '</div>';
+      }
+
+      out += `<div class="cardbottom"><div class="meta">${esc(source)} · ${nice(obs.date)}` +
+        `${opts.note ? ' · ' + esc(opts.note) : ''}</div>` +
+        `${stale ? `<div class="asof">As of ${nice(obs.date)}</div>` : ''}</div>`;
+    } else {
+      out += `<div class="value">—</div><div class="cardbottom">` +
+        `<div class="error">${esc(opts.error || 'Source data unavailable')}</div>` +
+        `<div class="meta">${esc(source)}</div></div>`;
+    }
+
+    return out + '</article>';
+  }
+
+  const currencyMark = currency => ({
+    RUB: '₽',
+    USD: '$',
+    CAD: 'CAD'
+  })[currency] || currency;
+
+  const money = (currency, dec = 4) =>
+    v => `<span class="currency">${currencyMark(currency)}</span> ${fixed(v, dec)}`;
+
+  const count = v => integer(v);
+  const rate = v => `${fixed(v, 2)}<span class="unit">%</span>`;
+  const cap = currency =>
+    v => `<span class="currency">${currencyMark(currency)}</span> ${fixed(v / 1e9, 1)} <span class="unit">bn</span>`;
+
+  const show = (id, cards) => $(id).innerHTML = cards.join('');
+
+  function request(url, options = {}) {
+    return fetch(url, {
+      ...options,
+      signal: AbortSignal.timeout(14000)
+    }).then(r => {
+      if (!r.ok) throw Error(`HTTP ${r.status}`);
+      return r;
+    });
+  }
+
+  const xml = s => {
+    const d = new DOMParser().parseFromString(s, 'application/xml');
+    if (d.querySelector('parsererror')) throw Error('Invalid XML');
+    return d;
+  };
+
+  function cbrDate(v) {
+    const m = String(v || '').match(/^(\d{2})\.(\d{2})\.(\d{4})/);
+    return m ? `${m[3]}-${m[2]}-${m[1]}` : null;
+  }
+
+  async function cbrFx() {
+    const dates = Array.from({ length: 8 }, (_, i) => shift(TODAY, -i));
+
+    const results = await Promise.allSettled(dates.map(async date => {
+      const u = new URL('https://www.cbr.ru/scripts/XML_daily.asp');
+      u.searchParams.set(
+        'date_req',
+        date.slice(8, 10) + '/' + date.slice(5, 7) + '/' + date.slice(0, 4)
+      );
+
+      const d = xml(await (await request(u)).text());
+      const effective = cbrDate(d.documentElement.getAttribute('Date'));
+      if (!effective || effective > date) return [];
+
+      return [...d.querySelectorAll('Valute')]
+        .filter(e => ['USD', 'EUR'].includes(e.querySelector('CharCode')?.textContent))
+        .map(e => ({
+          code: e.querySelector('CharCode').textContent,
+          date: effective,
+          value: Number(e.querySelector('Value').textContent.replace(',', '.')) /
+            Number(e.querySelector('Nominal').textContent)
+        }));
+    }));
+
+    const rows = results.flatMap(x => x.status === 'fulfilled' ? x.value : []);
+    if (!rows.length) throw Error('Bank of Russia API returned no readable observations');
+    return rows;
+  }
+
+  async function cbrKey() {
+    const body =
+      `<?xml version="1.0" encoding="utf-8"?>` +
+      `<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">` +
+      `<soap:Body><KeyRateXML xmlns="http://web.cbr.ru/">` +
+      `<fromDate>${shift(TODAY, -45)}T00:00:00</fromDate>` +
+      `<ToDate>${TODAY}T23:59:59</ToDate>` +
+      `</KeyRateXML></soap:Body></soap:Envelope>`;
+
+    const res = await request(
+      'https://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/xml; charset=utf-8',
+          SOAPAction: 'http://web.cbr.ru/KeyRateXML'
+        },
+        body
+      }
+    );
+
+    const d = xml(await res.text());
+
+    return [...d.getElementsByTagName('*')]
+      .filter(e => e.localName === 'KeyRate')
+      .map(e => {
+        const fields = [...e.children];
+        const get = n =>
+          fields.find(f => f.localName.toLowerCase() === n.toLowerCase())?.textContent;
+
+        return {
+          date: get('DT')?.slice(0, 10),
+          value: Number(get('Rate')?.replace(',', '.'))
+        };
+      })
+      .filter(x => iso(x.date) && valid(x.value));
+  }
+
+  async function bocFx() {
+    const u = new URL('https://www.bankofcanada.ca/valet/observations/FXCADUSD/json');
+    u.searchParams.set('start_date', shift(TODAY, -420));
+    u.searchParams.set('end_date', TODAY);
+
+    const j = await (await request(u)).json();
+
+    return (j.observations || [])
+      .map(x => ({
+        date: x.d,
+        value: Number(x.FXCADUSD?.v)
+      }))
+      .filter(x => iso(x.date) && valid(x.value));
+  }
+
+  async function moex(from, to) {
+    const u = new URL(
+      'https://iss.moex.com/iss/history/engines/stock/markets/shares/boards/TQBR/securities/RENI.json'
+    );
+    u.searchParams.set('from', from);
+    u.searchParams.set('till', to);
+    u.searchParams.set('iss.only', 'history');
+    u.searchParams.set('history.columns', 'TRADEDATE,CLOSE,VALUE,NUMTRADES');
+    u.searchParams.set('iss.meta', 'off');
+
+    const j = await (await request(u)).json();
+    const cols = j.history?.columns || [];
+
+    return (j.history?.data || [])
+      .map(r => Object.fromEntries(cols.map((c, i) => [c, r[i]])))
+      .filter(r => iso(r.TRADEDATE) && valid(r.CLOSE) && Number(r.NUMTRADES) > 0)
+      .map(r => ({
+        date: r.TRADEDATE,
+        value: Number(r.CLOSE),
+        turnover: Number(r.VALUE)
+      }));
+  }
+
+  async function reniHistory() {
+    const ranges = [
+      [shift(TODAY, -50), TODAY],
+      [shift(monthBack(TODAY), -12), monthBack(TODAY)],
+      [shift(yearBack(TODAY), -12), yearBack(TODAY)]
+    ];
+
+    const a = await Promise.all(ranges.map(r => moex(...r)));
+
+    return [...new Map(a.flat().map(x => [x.date, x])).values()]
+      .sort((x, y) => x.date.localeCompare(y.date));
+  }
+
+  async function eodHistory() {
+    const u = new URL('https://eodhd.com/api/eod/CURA.TO');
+    u.searchParams.set('api_token', token);
+    u.searchParams.set('from', shift(TODAY, -420));
+    u.searchParams.set('to', TODAY);
+    u.searchParams.set('fmt', 'json');
+    u.searchParams.set('period', 'd');
+    u.searchParams.set('order', 'a');
+
+    const j = await (await request(u)).json();
+    if (!Array.isArray(j)) throw Error(j.message || 'EOD feed unavailable');
+
+    return j
+      .map(x => ({ date: x.date, value: Number(x.close) }))
+      .filter(x => iso(x.date) && valid(x.value));
+  }
+
+  async function eodShares() {
+    const u = new URL('https://eodhd.com/api/v1.1/fundamentals/CURA.TO');
+    u.searchParams.set('api_token', token);
+    u.searchParams.set('filter', 'outstandingShares');
+
+    const j = await (await request(u)).json();
+    const o = j.outstandingShares || j;
+
+    return Object.values(o.quarterly || {})
+      .concat(Object.values(o.annual || {}))
+      .map(x => ({
+        date: x.dateFormatted || x.date,
+        value: Number(x.shares)
+      }))
+      .filter(x => iso(x.date) && valid(x.value))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  function renderMacro(cbr, key, boc) {
+    const usd = latest(cbr.filter(x => x.code === 'USD'), TODAY);
+    const eur = latest(cbr.filter(x => x.code === 'EUR'), TODAY);
+    const k = latest(key, TODAY);
+    const cad = latest(boc, TODAY);
+
+    show('macroGrid', [
+      card('USD / RUB', usd, money('RUB'), 'Bank of Russia', {
+        error: 'Browser could not load the CBR API'
+      }),
+      card('EUR / RUB', eur, money('RUB'), 'Bank of Russia', {
+        error: 'Browser could not load the CBR API'
+      }),
+      card('Key rate', k, rate, 'Bank of Russia', {
+        error: 'Browser could not load the CBR API'
+      }),
+      card('CAD / USD', cad, money('USD'), 'Bank of Canada')
+    ]);
+  }
+
+  function renderReni(rows) {
+    const current = latest(rows, TODAY);
+    const priorMonth = current && latest(rows, monthBack(current.date));
+    const priorYear = current && latest(rows, yearBack(current.date));
+
+    const tradingDays = current
+      ? [...rows]
+          .filter(x =>
+            x.date <= current.date &&
+            Number.isFinite(x.turnover) &&
+            x.turnover >= 0
+          )
+          .slice(-20)
+      : [];
+
+    const avg = tradingDays.length === 20
+      ? {
+          date: current.date,
+          value: tradingDays.reduce((s, x) => s + x.turnover, 0) / 20
+        }
+      : null;
+
+    const capNow = current && {
+      date: current.date,
+      value: current.value * RENI_SHARES
+    };
+
+    show('reniGrid', [
+      card('Close price', current, money('RUB'), 'MOEX · TQBR'),
+      card('20D ADTV', avg, money('RUB', 0), 'MOEX · TQBR', {
+        note: avg ? 'Average daily turnover, 20 trading days' : undefined,
+        error: '20 trading days not available',
+        signal: v =>
+          v > 50000000 ? 'signal-high' :
+          v < 50000000 ? 'signal-low' : ''
+      }),
+      card(
+        'Shares outstanding',
+        { date: TODAY, value: RENI_SHARES },
+        count,
+        'Fixed specification'
+      ),
+      card('Market capitalization', capNow, cap('RUB'), 'MOEX close × shares', {
+        changes: [
+          { name: 'MoM', value: pct(current, priorMonth) },
+          { name: 'YoY', value: pct(current, priorYear) }
+        ]
+      })
+    ]);
+  }
+
+  function renderCura(prices, fx, shares, reason) {
+    const common = prices.filter(p =>
+      fx.some(f => f.date === p.date) && p.date <= TODAY
+    );
+
+    const current = latest(common, TODAY);
+    const cad = current && latest(prices, current.date);
+    const usd = current && {
+      date: current.date,
+      value: current.value * fx.find(f => f.date === current.date).value
+    };
+
+    const share = latest(shares.filter(s => s.date <= TODAY), TODAY);
+    const shareFor = date => latest(shares, date);
+
+    const capitalization = p => {
+      const s = p && shareFor(p.date);
+      const f = p && fx.find(x => x.date === p.date);
+
+      return s && f
+        ? {
+            date: p.date,
+            value: p.value * f.value * s.value,
+            sharesDate: s.date
+          }
+        : null;
+    };
+
+    const now = capitalization(current);
+    const previous = current &&
+      capitalization(latest(common, shift(current.date, -1)));
+    const month = current &&
+      capitalization(latest(common, monthBack(current.date)));
+    const year = current &&
+      capitalization(latest(common, yearBack(current.date)));
+
+    const changes = [
+      { name: 'DoD', value: pct(now, previous) },
+      { name: 'MoM', value: pct(now, month) }
+    ];
+
+    if (TODAY >= '2027-06-05') {
+      changes.push({ name: 'YoY', value: pct(now, year) });
+    }
+
+    show('curaGrid', [
+      card('Close price · CAD', cad, money('CAD'), 'EODHD · TSX', {
+        error: reason
+      }),
+      card(
+        'Close price · USD',
+        usd,
+        money('USD'),
+        'EODHD close × Bank of Canada FX',
+        { error: reason || 'No same-day close and FX rate' }
+      ),
+      card('Shares outstanding', share, count, 'EODHD · reported shares', {
+        error: reason || 'Dated share count unavailable'
+      }),
+      card(
+        'Market capitalization',
+        now,
+        cap('USD'),
+        'Close × same-day FX × reported shares',
+        {
+          changes,
+          note: now ? `shares reported ${nice(now.sharesDate)}` : undefined,
+          error: reason || 'Date-consistent inputs unavailable'
+        }
+      )
+    ]);
+  }
+
+  async function load() {
+    const refresh = $('refreshBtn');
+    refresh.disabled = true;
+    $('status').textContent = 'Loading source data…';
+
+    renderMacro([], [], []);
+    renderReni([]);
+    renderCura(
+      [], [], [],
+      token ? 'Loading…' : 'Add an EODHD token in Data access'
+    );
+
+    const jobs = await Promise.allSettled([
+      cbrFx(),
+      cbrKey(),
+      bocFx(),
+      reniHistory(),
+      ...(token ? [eodHistory(), eodShares()] : [])
+    ]);
+
+    const result = i =>
+      jobs[i]?.status === 'fulfilled' ? jobs[i].value : [];
+
+    renderMacro(result(0), result(1), result(2));
+    renderReni(result(3));
+    renderCura(
+      result(4),
+      result(2),
+      result(5),
+      token ? null : 'EODHD token required'
+    );
+
+    const failures = jobs.filter(x => x.status === 'rejected').length;
+    const updateTime = new Intl.DateTimeFormat('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Asia/Nicosia'
+    }).format(new Date());
+
+    $('status').textContent = [
+      failures
+        ? `${failures} feeds could not load in this browser`
+        : `Checked ${updateTime} Cyprus time`,
+      !token ? 'Curaleaf requires EODHD token' : null
+    ].filter(Boolean).join(' · ');
+
+    refresh.disabled = false;
+  }
+
+  $('dashboardDate').textContent =
+    `Dashboard as of ` +
+    new Intl.DateTimeFormat('en-GB', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'UTC'
+    }).format(new Date(TODAY + 'T12:00:00Z'));
+
+  $('settingsBtn').onclick = () => $('settings').showModal();
+  $('cancelSettings').onclick = () => $('settings').close();
+  $('saveSettings').onclick = () => {
+    token = $('token').value.trim();
+    $('settings').close();
+    load();
+  };
+  $('refreshBtn').onclick = load;
+
+  load();
+})();
+</script>
+</body>
+</html>
