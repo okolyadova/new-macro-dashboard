@@ -1,0 +1,11 @@
+{
+  "name": "financial-market-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node dashboard-server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
