@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: new-macro-dashboard
+    name: new-macro-dashboard-v2
     runtime: node
     plan: free
     buildCommand: npm install
